@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Butterflies of a Florida Garden</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #header-canvas {
+      display: block;
+      width: 100%;
+    }
+
+    .title-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 30px;
+    }
+
+    .title-overlay h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(14px, 3vw, 32px);
+      color: #fff;
+      text-shadow:
+        3px 3px 0 #e74c8b,
+        -1px -1px 0 #4a90d9,
+        0 0 20px rgba(231, 76, 139, 0.5);
+      text-align: center;
+      line-height: 1.6;
+      letter-spacing: 2px;
+    }
+
+    .title-overlay .subtitle {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(7px, 1.2vw, 13px);
+      color: #ffd700;
+      text-shadow: 2px 2px 0 #b8860b;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    .header-wrapper {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Gallery */
+    .gallery-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+    }
+
+    .gallery-heading {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(12px, 2vw, 20px);
+      color: #ffd700;
+      text-align: center;
+      margin-bottom: 40px;
+      text-shadow: 2px 2px 0 #b8860b;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 30px;
+    }
+
+    .butterfly-card {
+      background: #16213e;
+      border: 3px solid #0f3460;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .butterfly-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(78, 204, 163, 0.25);
+      border-color: #4ecca3;
+    }
+
+    .butterfly-card:focus-within {
+      outline: 3px solid #ffd700;
+      outline-offset: 2px;
+    }
+
+    .card-image-wrapper {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #0a0a1a;
+    }
+
+    .card-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+
+    .butterfly-card:hover .card-image-wrapper img {
+      transform: scale(1.05);
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .card-body h2 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(9px, 1.3vw, 13px);
+      color: #4ecca3;
+      margin-bottom: 4px;
+      line-height: 1.6;
+    }
+
+    .card-body .scientific-name {
+      font-style: italic;
+      color: #e74c8b;
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .card-body p {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #b0b0c0;
+    }
+
+    .card-tag {
+      display: inline-block;
+      background: #0f3460;
+      color: #4ecca3;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 8px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 12px;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 3px solid #4ecca3;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      color: #ffd700;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .lightbox-caption {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      text-align: center;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 9px;
+      color: #555;
+      border-top: 2px solid #0f3460;
+    }
+
+    @media (max-width: 600px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- P5.js Header Animation -->
+  <div class="header-wrapper">
+    <div id="header-canvas"></div>
+    <div class="title-overlay" id="title-overlay">
+      <h1>Butterflies of a<br>Florida Garden</h1>
+      <div class="subtitle">~ A Photographic Field Guide ~</div>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <section class="gallery-section" aria-label="Butterfly Gallery">
+    <h2 class="gallery-heading">Gallery</h2>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-label="Image viewer" tabindex="-1">
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close image viewer">X</button>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+  </div>
+
+  <footer>
+    Photographed in a Florida Garden
+  </footer>
+
+  <script>
+    // ─── Butterfly Data ───
+    const butterflies = [
+      {
+        name: "Spicebush Swallowtail",
+        scientific: "Papilio troilus",
+        file: "spicebush-swallowtail.png",
+        alt: "A Spicebush Swallowtail butterfly resting on green grass with wings spread open, showing dark black wings with iridescent blue scaling, cream-white marginal spots, and a small orange spot near the tail.",
+        desc: "This species displays characteristic dark black wings adorned with iridescent blue scaling on the hindwings, rows of cream-white marginal spots, and a small orange spot near the base of the tail. Commonly found in eastern North America, it is named after its larval host plant, the spicebush.",
+        tag: "Swallowtail"
+      },
+      {
+        name: "Eastern Tiger Swallowtail",
+        scientific: "Papilio glaucus",
+        file: "eastern-tiger-swallowtail.png",
+        alt: "An Eastern Tiger Swallowtail perched on a branch against a bright blue sky, showing bold yellow wings with prominent black tiger-like stripes and dark wing borders.",
+        desc: "One of the most recognizable swallowtails in eastern North America, this butterfly shows bold yellow wings marked with prominent black tiger-like stripes and dark wing borders. Photographed perched on a branch surrounded by delicate pink blossoms.",
+        tag: "Swallowtail"
+      },
+      {
+        name: "Painted Lady",
+        scientific: "Vanessa cardui",
+        file: "painted-lady.png",
+        alt: "A Painted Lady butterfly sitting on white snapdragon flowers with rain droplets, displaying a patchwork of orange, brown, black, and white markings.",
+        desc: "The Painted Lady displays a distinctive patchwork of orange, brown, black, and white markings with dark spots scattered across the lower wings. One of the most widely distributed butterflies in the world, found on every continent except Antarctica and Australia.",
+        tag: "Brush-footed"
+      },
+      {
+        name: "White Peacock",
+        scientific: "Anartia jatrophae",
+        file: "white-peacock.png",
+        alt: "A White Peacock butterfly resting on a green leaf with wings fully spread, showing pale grayish-white wings with brown and orange banding and small round eyespots.",
+        desc: "The wings are pale grayish-white with subtle brown and orange banding along the edges and small, round eyespots on both the forewings and hindwings. This tropical and subtropical species is commonly found in the southern United States, Central America, and South America.",
+        tag: "Brush-footed"
+      },
+      {
+        name: "Monarch",
+        scientific: "Danaus plexippus",
+        file: "monarch.png",
+        alt: "A Monarch butterfly feeding on bright orange butterfly weed flowers, displaying iconic orange wings with bold black veins and white-dotted black borders.",
+        desc: "The iconic orange wings are outlined with bold black veins and bordered with black edges dotted with white spots. Monarchs are famous for their extraordinary multi-generational migration spanning thousands of miles between North America and central Mexico.",
+        tag: "Milkweed"
+      },
+      {
+        name: "Zebra Longwing",
+        scientific: "Heliconius charithonia",
+        file: "zebra-longwing.png",
+        alt: "A Zebra Longwing butterfly with elongated jet-black wings spread open, displaying striking pale yellow longitudinal stripes, perched among green leaves.",
+        desc: "Florida's state butterfly features jet black elongated wings with striking pale yellow longitudinal stripes. Notable for its ability to feed on pollen as well as nectar, granting it an unusually long lifespan for a butterfly.",
+        tag: "Longwing"
+      },
+      {
+        name: "Ceraunus Blue",
+        scientific: "Hemiargus ceraunus",
+        file: "ceraunus-blue.png",
+        alt: "A tiny Ceraunus Blue butterfly clinging to a green plant spike in profile, showing intricate wavy brown and white underwing patterns with a prominent blue-ringed black eyespot.",
+        desc: "A tiny lycaenid butterfly whose underwings display an intricate pattern of wavy brown and white lines with a prominent blue-ringed black eyespot near the hindwing tail. Found across the southern United States, the Caribbean, and Central and South America.",
+        tag: "Blue"
+      },
+      {
+        name: "Cabbage White",
+        scientific: "Pieris rapae",
+        file: "cabbage-white.png",
+        alt: "A Cabbage White butterfly perched on a green leaf with wings folded upward, showing soft creamy white wings with faint yellowish-green veining.",
+        desc: "Originally from Europe, this is now one of the most common butterflies worldwide. The wings are a soft creamy white with faint yellowish-green veining visible beneath. Frequently seen in gardens, fields, and agricultural areas where caterpillars feed on plants in the cabbage family.",
+        tag: "White"
+      }
+    ];
+
+    // ─── Build Gallery ───
+    const grid = document.getElementById('gallery-grid');
+
+    butterflies.forEach((b, i) => {
+      const card = document.createElement('div');
+      card.className = 'butterfly-card';
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `View ${b.name} - ${b.scientific}`);
+
+      card.innerHTML = `
+        <div class="card-image-wrapper">
+          <img src="${b.file}" alt="${b.alt}" loading="lazy">
+        </div>
+        <div class="card-body">
+          <h2>${b.name}</h2>
+          <span class="scientific-name">${b.scientific}</span>
+          <p>${b.desc}</p>
+          <span class="card-tag">${b.tag}</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => openLightbox(b));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openLightbox(b);
+        }
+      });
+
+      grid.appendChild(card);
+    });
+
+    // ─── Lightbox ───
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    const lightboxClose = document.getElementById('lightbox-close');
+
+    function openLightbox(b) {
+      lightboxImg.src = b.file;
+      lightboxImg.alt = b.alt;
+      lightboxCaption.textContent = `${b.name} (${b.scientific})`;
+      lightbox.classList.add('active');
+      lightbox.focus();
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+    }
+
+    lightboxClose.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    // ─── P5.js Retro Garden Animation ───
+    const headerSketch = (p) => {
+      let canvasW, canvasH;
+      const PIXEL = 4;
+      let clouds = [];
+      let flowers = [];
+      let butterflySprites = [];
+      let grassBlades = [];
+      let frameCount = 0;
+
+      p.setup = () => {
+        canvasW = p.windowWidth;
+        canvasH = 280;
+        const cnv = p.createCanvas(canvasW, canvasH);
+        cnv.parent('header-canvas');
+        p.noSmooth();
+
+        // Overlay title height match
+        document.getElementById('title-overlay').style.height = canvasH + 'px';
+
+        // Generate clouds
+        for (let i = 0; i < 5; i++) {
+          clouds.push({
+            x: p.random(-100, canvasW + 100),
+            y: p.random(20, 80),
+            w: p.random(60, 120),
+            speed: p.random(0.15, 0.4)
+          });
+        }
+
+        // Generate flowers across the bottom
+        const flowerColors = [
+          [255, 80, 120],   // pink
+          [255, 200, 50],   // yellow
+          [180, 80, 255],   // purple
+          [255, 120, 50],   // orange
+          [100, 180, 255],  // blue
+          [255, 255, 255],  // white
+          [255, 150, 180],  // light pink
+        ];
+
+        for (let i = 0; i < 18; i++) {
+          flowers.push({
+            x: p.random(20, canvasW - 20),
+            y: canvasH - p.random(25, 65),
+            color: flowerColors[p.floor(p.random(flowerColors.length))],
+            size: p.random(8, 16),
+            stemH: p.random(20, 50),
+            sway: p.random(0.02, 0.05),
+            phase: p.random(p.TWO_PI)
+          });
+        }
+
+        // Generate pixel butterflies
+        const bColors = [
+          [255, 140, 0],   // monarch orange
+          [255, 255, 80],  // yellow
+          [100, 180, 255], // blue
+          [255, 100, 180], // pink
+        ];
+        for (let i = 0; i < 4; i++) {
+          butterflySprites.push({
+            x: p.random(50, canvasW - 50),
+            y: p.random(60, canvasH - 80),
+            color: bColors[i],
+            dx: p.random(-0.6, 0.6),
+            dy: p.random(-0.4, 0.4),
+            wingPhase: p.random(p.TWO_PI)
+          });
+        }
+
+        // Grass blades
+        for (let i = 0; i < canvasW / 3; i++) {
+          grassBlades.push({
+            x: p.random(0, canvasW),
+            h: p.random(6, 18),
+            shade: p.random(40, 90)
+          });
+        }
+      };
+
+      p.draw = () => {
+        frameCount++;
+
+        // ── Sky gradient (pixel-banded) ──
+        for (let y = 0; y < canvasH * 0.65; y += PIXEL) {
+          let t = y / (canvasH * 0.65);
+          let r = p.lerp(60, 135, t);
+          let g = p.lerp(130, 206, t);
+          let b = p.lerp(220, 235, t);
+          p.noStroke();
+          p.fill(r, g, b);
+          p.rect(0, y, canvasW, PIXEL);
+        }
+
+        // ── Ground ──
+        let groundY = canvasH * 0.65;
+        for (let y = groundY; y < canvasH; y += PIXEL) {
+          let t = (y - groundY) / (canvasH - groundY);
+          let r = p.lerp(60, 30, t);
+          let g = p.lerp(140, 80, t);
+          let b = p.lerp(50, 20, t);
+          p.fill(r, g, b);
+          p.noStroke();
+          p.rect(0, y, canvasW, PIXEL);
+        }
+
+        // ── Sun ──
+        drawPixelSun(canvasW - 80, 50, 28);
+
+        // ── Clouds ──
+        clouds.forEach(c => {
+          c.x += c.speed;
+          if (c.x > canvasW + 150) c.x = -150;
+          drawPixelCloud(c.x, c.y, c.w);
+        });
+
+        // ── Grass ──
+        grassBlades.forEach(g => {
+          p.fill(30 + g.shade, 100 + g.shade, 20);
+          p.noStroke();
+          let sway = p.sin(frameCount * 0.03 + g.x * 0.1) * 2;
+          p.rect(g.x + sway, groundY - g.h, PIXEL, g.h + 2);
+        });
+
+        // ── Flower Stems & Blooms ──
+        flowers.forEach(f => {
+          let sway = p.sin(frameCount * f.sway + f.phase) * 3;
+
+          // Stem
+          p.stroke(40, 120, 40);
+          p.strokeWeight(2);
+          p.line(f.x, canvasH, f.x + sway, f.y);
+          p.noStroke();
+
+          // Leaf
+          p.fill(50, 140, 50);
+          p.ellipse(f.x + sway * 0.5 - 5, f.y + f.stemH * 0.4, 8, 4);
+
+          // Petals (pixel style)
+          let bx = f.x + sway;
+          let by = f.y;
+          let s = f.size;
+          p.fill(f.color[0], f.color[1], f.color[2]);
+          // 4 petals in cross pattern
+          p.rect(bx - s / 2, by - s, s, s);        // top
+          p.rect(bx - s / 2, by, s, s);             // bottom
+          p.rect(bx - s, by - s / 2, s, s);         // left
+          p.rect(bx, by - s / 2, s, s);             // right
+          // center
+          p.fill(255, 220, 50);
+          p.rect(bx - s * 0.3, by - s * 0.3, s * 0.6, s * 0.6);
+        });
+
+        // ── Pixel Butterflies ──
+        butterflySprites.forEach(b => {
+          b.x += b.dx + p.sin(frameCount * 0.02 + b.wingPhase) * 0.5;
+          b.y += b.dy + p.cos(frameCount * 0.015 + b.wingPhase) * 0.3;
+
+          // Bounce
+          if (b.x < 10 || b.x > canvasW - 10) b.dx *= -1;
+          if (b.y < 30 || b.y > canvasH - 40) b.dy *= -1;
+
+          drawPixelButterfly(b.x, b.y, b.color, frameCount, b.wingPhase);
+        });
+      };
+
+      function drawPixelSun(x, y, r) {
+        // Sun glow
+        p.noStroke();
+        p.fill(255, 230, 80, 40);
+        p.rect(x - r * 1.5, y - r * 1.5, r * 3, r * 3);
+
+        // Sun body (pixelated circle)
+        p.fill(255, 220, 50);
+        for (let dy = -r; dy <= r; dy += PIXEL) {
+          for (let dx = -r; dx <= r; dx += PIXEL) {
+            if (dx * dx + dy * dy <= r * r) {
+              p.rect(x + dx, y + dy, PIXEL, PIXEL);
+            }
+          }
+        }
+
+        // Rays
+        p.fill(255, 240, 100);
+        let rayLen = 8 + p.sin(frameCount * 0.05) * 3;
+        for (let a = 0; a < 8; a++) {
+          let angle = (a / 8) * p.TWO_PI + frameCount * 0.01;
+          let rx = x + p.cos(angle) * (r + 6);
+          let ry = y + p.sin(angle) * (r + 6);
+          p.rect(rx - PIXEL / 2, ry - PIXEL / 2, PIXEL * 2, rayLen);
+        }
+      }
+
+      function drawPixelCloud(x, y, w) {
+        p.noStroke();
+        p.fill(255, 255, 255, 200);
+        let h = w * 0.4;
+        // Main body
+        for (let dx = 0; dx < w; dx += PIXEL) {
+          let colH = h * p.sin((dx / w) * p.PI);
+          for (let dy = 0; dy < colH; dy += PIXEL) {
+            p.rect(x + dx, y - dy, PIXEL, PIXEL);
+          }
+        }
+        // Bumps on top
+        p.fill(245, 245, 255, 180);
+        let bump1W = w * 0.4;
+        for (let dx = 0; dx < bump1W; dx += PIXEL) {
+          let bH = bump1W * 0.5 * p.sin((dx / bump1W) * p.PI);
+          for (let dy = 0; dy < bH; dy += PIXEL) {
+            p.rect(x + w * 0.15 + dx, y - h * 0.7 - dy, PIXEL, PIXEL);
+          }
+        }
+        let bump2W = w * 0.3;
+        for (let dx = 0; dx < bump2W; dx += PIXEL) {
+          let bH = bump2W * 0.5 * p.sin((dx / bump2W) * p.PI);
+          for (let dy = 0; dy < bH; dy += PIXEL) {
+            p.rect(x + w * 0.5 + dx, y - h * 0.5 - dy, PIXEL, PIXEL);
+          }
+        }
+      }
+
+      function drawPixelButterfly(x, y, col, frame, phase) {
+        let wingSpan = p.abs(p.sin(frame * 0.08 + phase));
+        let ww = p.floor(6 + wingSpan * 6);
+        let wh = 5;
+        p.noStroke();
+
+        // Wings
+        p.fill(col[0], col[1], col[2]);
+        // Left wing
+        p.rect(x - ww - 2, y - wh / 2, ww, wh * PIXEL / 2);
+        // Right wing
+        p.rect(x + 2, y - wh / 2, ww, wh * PIXEL / 2);
+
+        // Wing detail
+        p.fill(0, 0, 0, 80);
+        p.rect(x - ww / 2 - 2, y, ww / 2, PIXEL);
+        p.rect(x + ww / 2, y, ww / 2, PIXEL);
+
+        // Body
+        p.fill(40);
+        p.rect(x - 1, y - 4, 3, 10);
+
+        // Antennae
+        p.stroke(40);
+        p.strokeWeight(1);
+        p.line(x, y - 4, x - 4, y - 10);
+        p.line(x, y - 4, x + 4, y - 10);
+        p.noStroke();
+      }
+
+      p.windowResized = () => {
+        canvasW = p.windowWidth;
+        p.resizeCanvas(canvasW, canvasH);
+        document.getElementById('title-overlay').style.height = canvasH + 'px';
+      };
+    };
+
+    new p5(headerSketch);
+  </script>
+</body>
+</html>
